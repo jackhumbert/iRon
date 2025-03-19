@@ -245,9 +245,11 @@ protected:
                 string str = formatLaptime(pair.second.best);
         }
 
-        //const CarInfo ciSelf = carInfo[ir_PlayerCarIdx.getInt() > 0 ? hasPacecar ? ir_PlayerCarIdx.getInt() - 1 : ir_PlayerCarIdx.getInt() : 0];
+        const int playerCarIdx = ir_PlayerCarIdx.getInt();
+        //if (!playerCarIdx) return; // Couldn't get player idx, probably JUST loaded into a session
+        const CarInfo ciSelf = carInfo[playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0];
         // Sometimes the offset is not necessary. In a free practice session it didn't need it, but in a qualifying it did
-        const CarInfo ciSelf = carInfo[ir_session.driverCarIdx];
+        //const CarInfo ciSelf = carInfo[ir_session.driverCarIdx];
         
         // Sort by position
         sort( carInfo.begin(), carInfo.end(),
