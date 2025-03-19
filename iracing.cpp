@@ -24,6 +24,7 @@ SOFTWARE.
 
 #include "iracing.h"
 #include "Config.h"
+#include "TelemetryHandler.h"
 
 irsdkCVar ir_SessionTime("SessionTime");    // double[1] Seconds since session start (s)
 irsdkCVar ir_SessionTick("SessionTick");    // int[1] Current update number ()
@@ -397,6 +398,14 @@ ConnectionStatus ir_tick()
         fclose(fp);
 #endif
         char path[256];
+        
+        std::string telemetry_file;
+        sprintf(path, "WeekendInfo:TelemetryOptions:TelemetryDiskFile:");
+        parseYamlStr(sessionYaml, path, telemetry_file);
+        if (telemetry_file[0] != 0) {
+            telemetry_file.replace(1, 1, ":");
+            do_update_telemetry(telemetry_file);
+        }
 
         // Weekend info
         sprintf( path, "WeekendInfo:SubSessionID:" );

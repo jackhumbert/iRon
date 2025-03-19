@@ -365,18 +365,18 @@ int irsdkClient::getSessionStrVal(const char *path, char *val, int valLen)
 		{
 			// dont overflow out buffer
 			int len = tValLen;
-			if(len > valLen)
-				len = valLen;
+			if(len > (valLen-1)) // reserve space for null termination
+				len = (valLen-1);
 
 			// copy what we can, even if buffer too small
 			memcpy(val, tVal, len);
 			val[len] = '\0'; // origional string has no null termination...
 
 			// if buffer was big enough, return success
-			if(valLen >= tValLen)
+			if((valLen-1) >= tValLen)
 				return 1;
 			else // return size of buffer needed
-				return -tValLen;
+				return -(tValLen + 1);
 		}
 	}
 
@@ -412,7 +412,7 @@ irsdkCVar::irsdkCVar(const char *name)
 }
 
 void irsdkCVar::setVarName(const char *name)
-{ 
+{
 	if(!name || 0 != strncmp(name, m_name, sizeof(m_name)))
 	{
 		m_idx = -1;

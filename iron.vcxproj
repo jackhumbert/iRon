@@ -224,14 +224,17 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="iracing.cpp" />
     <ClCompile Include="irsdk\irsdk_client.cpp" />
+    <ClCompile Include="irsdk\irsdk_diskclient.cpp" />
     <ClCompile Include="irsdk\irsdk_utils.cpp" />
     <ClCompile Include="irsdk\yaml_parser.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="OverlayDebug.cpp" />
+    <ClCompile Include="TelemetryHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
+    <ClInclude Include="irsdk\irsdk_diskclient.h" />
     <ClInclude Include="OverlayCover.h" />
     <ClInclude Include="OverlayDDU.h" />
     <ClInclude Include="OverlayDebug.h" />
@@ -244,7 +247,9 @@
     <ClInclude Include="OverlayRadar.h" />
     <ClInclude Include="OverlayRelative.h" />
     <ClInclude Include="OverlayStandings.h" />
+    <ClInclude Include="OverlayTires.h" />
     <ClInclude Include="picojson.h" />
+    <ClInclude Include="TelemetryHandler.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>

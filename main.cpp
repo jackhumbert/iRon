@@ -48,6 +48,7 @@ SOFTWARE.
 #include "OverlayDebug.h"
 #include "OverlayDDU.h"
 #include "OverlayRadar.h"
+#include "OverlayTires.h"
 #include "util.h"
 
 // Global var
@@ -56,7 +57,6 @@ bool g_dbgOverlayEnabled;
     #include <chrono>
     
     //#define DEBUG_DUMP_VARS
-    
 #endif
 using namespace Microsoft::WRL;
 using namespace std;
@@ -72,7 +72,8 @@ enum class Hotkey
     Inputs,
     Relative,
     Cover,
-    Radar
+    Radar,
+    Tires
 };
 
 static void registerHotkeys()
@@ -87,6 +88,7 @@ static void registerHotkeys()
     UnregisterHotKey( NULL, (int)Hotkey::Relative );
     UnregisterHotKey( NULL, (int)Hotkey::Cover );
     UnregisterHotKey(NULL, (int)Hotkey::Radar );
+    UnregisterHotKey(NULL, (int)Hotkey::Tires );
 
     UINT vk, mod;
 
@@ -118,6 +120,9 @@ static void registerHotkeys()
 
     if (parseHotkey(g_cfg.getString("OverlayRadar", "toggle_hotkey", "ctrl-5"), &mod, &vk))
         RegisterHotKey(NULL, (int)Hotkey::Radar, mod, vk);
+    
+    if (parseHotkey(g_cfg.getString("OverlayTires", "toggle_hotkey", "ctrl-6"), &mod, &vk))
+        RegisterHotKey(NULL, (int)Hotkey::Tires, mod, vk);
 }
 
 static void handleConfigChange( vector<Overlay*> overlays, ConnectionStatus status )
@@ -252,6 +257,7 @@ int main()
     printf("    Toggle relative overlay:      %s\n", g_cfg.getString("OverlayRelative","toggle_hotkey","").c_str() );
     printf("    Toggle cover overlay:         %s\n", g_cfg.getString("OverlayCover","toggle_hotkey","").c_str() );
     printf("    Toggle radar overlay:         %s\n", g_cfg.getString("OverlayRadar", "toggle_hotkey", "").c_str());
+    printf("    Toggle tires overlay:         %s\n", g_cfg.getString("OverlayTires", "toggle_hotkey", "").c_str());
     printf("\niRon will generate a file called \'config.json\' in its current directory. This file\n"\
            "stores your settings. You can edit the file at any time, even while iRon is running,\n"\
            "to customize your overlays and hotkeys.\n\n");
@@ -284,6 +290,7 @@ int main()
     overlays.push_back( new OverlayStandings(m_d3dDevice, carBrandIconsMap, carBrandIconsLoaded) );
     overlays.push_back( new OverlayDDU(m_d3dDevice) );
     overlays.push_back(new OverlayRadar(m_d3dDevice) );
+    overlays.push_back(new OverlayTires(m_d3dDevice) );
 
 #ifdef _DEBUG
     overlays.push_back( new OverlayDebug(m_d3dDevice) );
@@ -329,6 +336,17 @@ int main()
         {
             for( Overlay* o : overlays )
                 o->sessionChanged();
+        }
+
+        // Tire disk telemetry update
+        if ((frameCnt & 63) == 0 ) { // Every 64 frames, all the first 63 values are zero. So a bit more than 1s of delay 
+            if ( status == ConnectionStatus::DRIVING &&
+                (ir_session.sessionType != SessionType::QUALIFY && ir_session.sessionType != SessionType::RACE) 
+            ) {
+                if (g_cfg.getBool("OverlayTires", "enabled", true)) {
+                    irsdk_broadcastMsg(irsdk_BroadcastTelemCommand, irsdk_TelemCommand_Restart, 0, 0);
+                }
+            }
         }
 
         dbg( "connection status: %s, session type: %s, session state: %d, pace mode: %d, on track: %d, flags: 0x%X", ConnectionStatusStr[(int)status], SessionTypeStr[(int)ir_session.sessionType], ir_SessionState.getInt(), ir_PaceMode.getInt(), (int)ir_IsOnTrackCar.getBool(), ir_SessionFlags.getInt() );
@@ -403,6 +421,9 @@ int main()
                     case (int)Hotkey::Radar:
                         g_cfg.setBool("OverlayRadar", "enabled", !g_cfg.getBool("OverlayRadar", "enabled", true));
                         break;
+                    case (int)Hotkey::Tires:
+                        g_cfg.setBool("OverlayTires", "enabled", !g_cfg.getBool("OverlayTires", "enabled", true));
+                        break;
 
                     case (int)Hotkey::TargetLapUp:
                         g_cfg.setInt("OverlayDDU", "fuel_target_lap", g_cfg.getInt("OverlayDDU", "fuel_target_lap", 0) + 1);
@@ -414,6 +435,7 @@ int main()
                     case (int)Hotkey::Debug:
                         const bool newDebugStatus = !g_cfg.getBool("OverlayDebug", "enabled", true);
                         g_cfg.setBool( "OverlayDebug", "enabled", newDebugStatus);
+                        // we use this global so we can ignore the "dbg" function when overlayDebug is closed
                         g_dbgOverlayEnabled = newDebugStatus;
                         break;
                     }
