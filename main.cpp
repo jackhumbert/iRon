@@ -339,7 +339,7 @@ int main()
         }
 
         // Tire disk telemetry update
-        if ((frameCnt & 63) == 0 ) { // Every 64 frames, all the first 63 values are zero. So a bit more than 1s of delay 
+        if ((frameCnt % 60) == 0 ) { // Every 60 frames, so 1 sec of delay
             if ( status == ConnectionStatus::DRIVING &&
                 (ir_session.sessionType != SessionType::QUALIFY && ir_session.sessionType != SessionType::RACE) 
             ) {
@@ -466,7 +466,7 @@ int main()
         debugtimeavg = (debugtimeavg / 10) * 9 + (float)(loopTimeDiff) / 10;
         dbg("Main loop took %.4f (%i) microseconds", debugtimeavg, loopTimeDiff);
 #   if defined(DEBUG_OVERLAY_TIME)
-        std::cout << std::format("Main loop took {:.4f} ({}) microseconds", debugtimeavg, loopTimeDiff) << std::endl;
+        std::cout << std::format("{} (AVG:{:.4f}) microseconds - Main [{}]", loopTimeDiff, debugtimeavg, frameCnt-1) << std::endl;
 #   endif
         debugtime_start = std::chrono::high_resolution_clock::now();
         // This should remain in debug - END

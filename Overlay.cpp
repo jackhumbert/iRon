@@ -332,9 +332,11 @@ void Overlay::update()
     debugTimeEnd = std::chrono::high_resolution_clock::now();
     debugTimeDiff = std::chrono::duration_cast<micro>(debugTimeEnd - debugTimeStart).count();
     debugTimeAvg = (debugTimeAvg / 10) * 9 + (float)(debugTimeDiff) / 10;
-    dbg("%s loop took %.4f (%i) microseconds", m_name.c_str(), debugTimeAvg, debugTimeDiff);
+    dbg("%s loop took %i (AVG: %.4f) microseconds", m_name.c_str(), debugTimeDiff ,debugTimeAvg);
 #   if defined(DEBUG_OVERLAY_TIME)
-        std::cout << std::format("{} loop took {:.4f} ({}) microseconds", m_name.c_str(), debugTimeAvg, debugTimeDiff) << std::endl;
+    if (debugTimeDiff > debugTimeAvg * 1.5) {
+        std::cout << std::format("{} (AVG:{:.4f}) microseconds - {}", debugTimeDiff, debugTimeAvg, m_name.c_str()) << std::endl;
+    }
 #   endif
     debugTimeStart = std::chrono::high_resolution_clock::now();
 #endif

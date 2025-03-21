@@ -390,7 +390,7 @@ ConnectionStatus ir_tick()
     if( irsdk.wasSessionStrUpdated() )
     {
         const char* sessionYaml = irsdk.getSessionStr();
-#ifdef _DEBUG
+#if defined(_DEBUG) and FALSE // disable manually now that tire graph spams this
         //printf("%s\n", sessionYaml);
         FILE* fp = fopen("sessionYaml.txt","ab");
         fprintf(fp,"\n\n==== NEW SESSION STRING ======================================\n");
@@ -404,8 +404,9 @@ ConnectionStatus ir_tick()
         parseYamlStr(sessionYaml, path, telemetry_file);
         if (telemetry_file[0] != 0) {
             telemetry_file.replace(1, 1, ":");
-            do_update_telemetry(telemetry_file);
+            g_telemetryHandler.updateTelemetryFile(telemetry_file);
         }
+        else g_telemetryHandler.mergeTelemetry();
 
         // Weekend info
         sprintf( path, "WeekendInfo:SubSessionID:" );
@@ -421,12 +422,14 @@ ConnectionStatus ir_tick()
         std::string sessionNameStr;
         sprintf( path, "SessionInfo:Sessions:SessionNum:{%d}SessionName:", ir_SessionNum.getInt() );
         parseYamlStr( sessionYaml, path, sessionNameStr );
-        if( sessionNameStr == "PRACTICE" )
+        if (sessionNameStr == "PRACTICE")
             ir_session.sessionType = SessionType::PRACTICE;
-        if( sessionNameStr == "QUALIFY" )
+        else if (sessionNameStr == "QUALIFY")
             ir_session.sessionType = SessionType::QUALIFY;
-        else if( sessionNameStr == "RACE" )
+        else if (sessionNameStr == "RACE")
             ir_session.sessionType = SessionType::RACE;
+        else
+            ir_session.sessionType = SessionType::UNKNOWN;
         
         std:string simMode;
         parseYamlStr(sessionYaml, "WeekendInfo:SimMode:", simMode);

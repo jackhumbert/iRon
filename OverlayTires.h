@@ -36,7 +36,7 @@ class OverlayTires : public Overlay
 {
     public:
 
-        const float DefaultFontSize = 15.3f;
+        const float DefaultFontSize = 10.0f;
 
         OverlayTires(Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice)
             : Overlay("OverlayTires", d3dDevice)
@@ -86,7 +86,18 @@ class OverlayTires : public Overlay
 
         virtual void onUpdate()
         {
-            process_telemetry();
+
+            if (ir_session.sessionType == SessionType::QUALIFY || ir_session.sessionType == SessionType::RACE) {
+
+                wchar_t s[64] = L"Unavailable outside of practice";
+                float w = computeTextExtent(s, m_dwriteFactory.Get(), m_textFormat.Get()).x;
+                m_renderTarget->BeginDraw();
+                m_brush->SetColor( float4(1.0, 1.0, 1.0f, 1.0f ));
+                m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), 15, 15+w, 15, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER);
+                m_renderTarget->EndDraw();
+                return;
+            }
+            TelemetryData td = g_telemetryHandler.processTelemetry();
 
             m_columns.layout( (float)m_width - 20 );
             m_renderTarget->BeginDraw();
@@ -103,27 +114,24 @@ class OverlayTires : public Overlay
             float rectH = max_height - m_fontSize*3;
             float rectX, rectY, tempY, wearY;
 
-		    for (int axle = 0; axle <= 1; axle++) {
+		    for (int axle = 0; axle < 2; axle++) {
                 wearY = std::max(xoff, ((xoff/2) + max_height) * axle);
                 rectY = wearY + m_fontSize*0.5f;
                 tempY = rectY+rectH + m_fontSize*0.5f;
 
-    			for (int side = 0; side <= 1; side++) {
+			    for (int sect = 0; sect < 6; sect++) {
+                    clm = m_columns.get(sect);
 
-				    for (int sect = 0; sect <= 2; sect++) {
-                        clm = m_columns.get(side*3 + sect);
+                    rectX = clm->textL;
+                    r = { rectX, rectY, rectX+w, rectY+rectH };
+                    m_brush->SetColor( getTireColor(td.temp[axle][sect]) ); // temp
+                    m_renderTarget->FillRectangle( &r, m_brush.Get() );
 
-                        rectX = clm->textL;
-                        r = { rectX, rectY, rectX+w, rectY+rectH };
-                        m_brush->SetColor( getTireColor(g_telemetry_data[axle][side][sect]) ); // temp
-                        m_renderTarget->FillRectangle( &r, m_brush.Get() );
+                    m_brush->SetColor( col );
+                    swprintf( s, _countof(s), L"%.1f", td.temp[axle][sect]); // temp
+                    m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), clm->textL, clm->textR, tempY, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
 
-                        m_brush->SetColor( col );
-                        swprintf( s, _countof(s), L"%.1f", g_telemetry_data[axle][side][sect]); // temp
-                        m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), clm->textL, clm->textR, tempY, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
-
-				    }
-			    }
+				}
 		    }
 
             m_renderTarget->EndDraw();
@@ -131,8 +139,8 @@ class OverlayTires : public Overlay
 
         float4 getTireColor(const float tyreData) {
             const float lowTemp = 40;
-            const float goodTemp = 70;
-            const float highTemp = 100;
+            const float goodTemp = 60;
+            const float highTemp = 90;
 
             float red = std::min(1.0f, std::max(0.0f, ( (tyreData-goodTemp) / (highTemp-goodTemp) )));
             float blue = std::min(1.0f, std::max(0.0f, ( (goodTemp-tyreData) / (goodTemp-lowTemp) )));
