@@ -25,6 +25,7 @@ SOFTWARE.
 #include "iracing.h"
 #include "Config.h"
 #include "TelemetryHandler.h"
+#include "string"
 
 irsdkCVar ir_SessionTime("SessionTime");    // double[1] Seconds since session start (s)
 irsdkCVar ir_SessionTick("SessionTick");    // int[1] Current update number ()
@@ -404,32 +405,22 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
 
     parseYamlInt(sessionYaml, "WeekendInfo:WeekendOptions:NumCarClasses:", &ir_session_pointer->numCarClasses);
 
-    // Current session type
-    std::string sessionNameStr;
-    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionName:", ir_SessionNum.getInt());
-    parseYamlStr(sessionYaml, path, sessionNameStr);
-    if (sessionNameStr == "PRACTICE")
-        ir_session_pointer->sessionType = SessionType::PRACTICE;
-    else if (sessionNameStr == "QUALIFY")
-        ir_session_pointer->sessionType = SessionType::QUALIFY;
-    else if (sessionNameStr == "RACE")
-        ir_session_pointer->sessionType = SessionType::RACE;
-    else
-        ir_session_pointer->sessionType = SessionType::UNKNOWN;
 
     std:string simMode;
     parseYamlStr(sessionYaml, "WeekendInfo:SimMode:", simMode);
     ir_session_pointer->isReplay = (simMode == "replay");
+    
+    const char* driverInfoYaml = strstr(sessionYaml, "DriverInfo:");
 
     // Driver/car info
-    parseYamlInt(sessionYaml, "DriverInfo:DriverCarIdx:", &ir_session_pointer->driverCarIdx);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarFuelMaxLtr:", &ir_session_pointer->fuelMaxLtr);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarIdleRPM:", &ir_session_pointer->rpmIdle);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarRedLine:", &ir_session_pointer->rpmRedline);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarSLFirstRPM:", &ir_session_pointer->rpmSLFirst);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarSLShiftRPM:", &ir_session_pointer->rpmSLShift);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarSLLastRPM:", &ir_session_pointer->rpmSLLast);
-    parseYamlFloat(sessionYaml, "DriverInfo:DriverCarSLBlinkRPM:", &ir_session_pointer->rpmSLBlink);
+    parseYamlInt(driverInfoYaml, "DriverInfo:DriverCarIdx:", &ir_session_pointer->driverCarIdx);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarFuelMaxLtr:", &ir_session_pointer->fuelMaxLtr);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarIdleRPM:", &ir_session_pointer->rpmIdle);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarRedLine:", &ir_session_pointer->rpmRedline);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarSLFirstRPM:", &ir_session_pointer->rpmSLFirst);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarSLShiftRPM:", &ir_session_pointer->rpmSLShift);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarSLLastRPM:", &ir_session_pointer->rpmSLLast);
+    parseYamlFloat(driverInfoYaml, "DriverInfo:DriverCarSLBlinkRPM:", &ir_session_pointer->rpmSLBlink);
 
     // Per-Driver info
     for (int carIdx = 0; carIdx < IR_MAX_CARS; ++carIdx)
@@ -438,15 +429,16 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
 
         car.isSelf = int(carIdx == ir_session_pointer->driverCarIdx);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}UserName:", carIdx);
-        if (!parseYamlStr(sessionYaml, path, car.userName))
+        sprintf(path, " - CarIdx: %d", carIdx);
+        const char* carIdxYaml = strstr(driverInfoYaml, path);
+        
+        if (!parseYamlStr(carIdxYaml, "UserName:", car.userName))
         {
             car = Car();
             continue;
         }
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}TeamName:", carIdx);
-        if (!parseYamlStr(sessionYaml, path, car.teamName))
+        if (!parseYamlStr(carIdxYaml, "TeamName:", car.teamName))
         {
             car = Car();
             continue;
@@ -481,14 +473,11 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
             }
         }
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarNumber:", carIdx);
-        parseYamlStr(sessionYaml, path, car.carNumberStr);
+        parseYamlStr(carIdxYaml, "CarNumber:", car.carNumberStr);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarNumberRaw:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.carNumber);
+        parseYamlInt(carIdxYaml, "CarNumberRaw", &car.carNumber);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}LicString:", carIdx);
-        parseYamlStr(sessionYaml, path, car.licenseStr);
+        parseYamlStr(carIdxYaml, "LicString:", car.licenseStr);
         car.licenseChar = car.licenseStr.empty() ? 'R' : car.licenseStr[0];
         const std::string SRstr = car.licenseStr.empty() ? "0" : std::string(car.licenseStr.begin() + 1, car.licenseStr.end());
         car.licenseSR = (float)atof(SRstr.c_str());
@@ -515,7 +504,7 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
         }
         /*
         sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}LicColor:", carIdx);
-        parseYamlStr(sessionYaml, path, car.licenseColStr);
+        parseYamlStr(carIdxYaml, path, car.licenseColStr);
         sscanf(car.licenseColStr.c_str(), "0x%x", &licColHex);
         car.licenseCol.r = float((licColHex >> 16) & 0xff) / 255.f;
         car.licenseCol.g = float((licColHex >> 8) & 0xff) / 255.f;
@@ -523,8 +512,7 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
         car.licenseCol.a = 1;
         */
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarClassColor:", carIdx);
-        parseYamlStr(sessionYaml, path, car.classColStr);
+        parseYamlStr(carIdxYaml, "CarClassColor:", car.classColStr);
         unsigned classColHex = 0;
         sscanf(car.classColStr.c_str(), "0x%x", &classColHex);
         car.classCol.r = float((classColHex >> 16) & 0xff) / 255.f;
@@ -532,119 +520,139 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
         car.classCol.b = float((classColHex >> 0) & 0xff) / 255.f;
         car.classCol.a = 1;
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarClassID:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.classId);
+        parseYamlInt(carIdxYaml, "CarClassID:", &car.classId);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}IRating:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.irating);
+        parseYamlInt(carIdxYaml, "IRating:", &car.irating);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarIsPaceCar:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.isPaceCar);
+        parseYamlInt(carIdxYaml, "CarIsPaceCar:", &car.isPaceCar);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}IsSpectator:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.isSpectator);
+        parseYamlInt(carIdxYaml, "IsSpectator:", &car.isSpectator);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CurDriverIncidentCount:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.incidentCount);
+        parseYamlInt(carIdxYaml, "CurDriverIncidentCount:", &car.incidentCount);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarClassEstLapTime:", carIdx);
-        parseYamlFloat(sessionYaml, path, &car.carClassEstLapTime);
+        parseYamlFloat(carIdxYaml, "CarClassEstLapTime:", &car.carClassEstLapTime);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarScreenName:", carIdx);
-        parseYamlStr(sessionYaml, path, car.carName);
+        parseYamlStr(carIdxYaml, "CarScreenName:", car.carName);
 
-        sprintf(path, "DriverInfo:Drivers:CarIdx:{%d}CarID:", carIdx);
-        parseYamlInt(sessionYaml, path, &car.carID);
+        parseYamlInt(carIdxYaml, "CarID:", &car.carID);
 
         car.qualy.position = 0;
         car.practice.position = 0;
         car.race.position = 0;
     }
-
-    // Qualifying results info
-    for (int pos = 0; pos < IR_MAX_CARS; ++pos)
-    {
-        sprintf(path, "QualifyResultsInfo:Results:Position:{%d}CarIdx:", pos);
-        int carIdx = -1;
-        if (parseYamlInt(sessionYaml, path, &carIdx)) {
-
-            sprintf(path, "QualifyResultsInfo:Results:Position:{%d}ClassPosition:", pos);
-
-            int realPos = -1;
-            parseYamlInt(sessionYaml, path, &realPos);
-            ir_session_pointer->cars[carIdx].qualy.position = realPos + 1;
-
-            sprintf(path, "QualifyResultsInfo:Results:Position:{%d}FastestTime:", pos);
-            parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].qualy.fastestTime);
-        }
-    }
-
-    // Session info (may override qual results from above, but that's ok since hopefully they're the same!)
-    for (int session = 0; ; ++session)
-    {
-        std::string sessionNameStr;
-        sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionName:", session);
-        if (!parseYamlStr(sessionYaml, path, sessionNameStr))
-            break;
-
-        std::string str;
-        sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionTime:", session);
-        parseYamlStr(sessionYaml, path, str);
-        ir_session_pointer->isUnlimitedTime = int(str == "unlimited");
-
-        sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionLaps:", session);
-        parseYamlStr(sessionYaml, path, str);
-        ir_session_pointer->isUnlimitedLaps = int(str == "unlimited");
-
-        for (int pos = 1; pos < IR_MAX_CARS + 1; ++pos)
+    
+    const char* qualifyResultsInfoYaml = strstr(sessionYaml, "QualifyResultsInfo:");
+    if (qualifyResultsInfoYaml != nullptr) {
+        // Qualifying results info
+        for (int pos = 0; pos < IR_MAX_CARS; ++pos)
         {
-            int carIdx = -1;
-            sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}CarIdx:", session, pos);
-            if (parseYamlInt(sessionYaml, path, &carIdx))
-            {
-                if (sessionNameStr == "PRACTICE") {
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}ClassPosition:", session, pos);
+
+            sprintf(path, "\n - Position: %d", pos);
+            const char* qualifyingPositionYamlTmp = strstr(qualifyResultsInfoYaml, path);
+            if (qualifyingPositionYamlTmp != nullptr) {
+                const char* qualifyingPositionYaml = qualifyingPositionYamlTmp + 16; // +16 to skip the searched string
+
+                //sprintf(path, "QualifyResultsInfo:Results:Position:{%d}CarIdx:", pos);
+                int carIdx = -1;
+                //if (parseYamlInt(qualifyResultsInfoYaml, path, &carIdx)) {
+                if (parseYamlInt(qualifyingPositionYaml, "CarIdx:", &carIdx)) {
+
+                    //sprintf(path, "QualifyResultsInfo:Results:Position:{%d}ClassPosition:", pos);
 
                     int realPos = -1;
-                    parseYamlInt(sessionYaml, path, &realPos);
-                    ir_session_pointer->cars[carIdx].practice.position = realPos + 1;
-
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}LastTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].practice.lastTime);
-
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}FastestTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].practice.fastestTime);
-                }
-                else if (sessionNameStr == "QUALIFY") {
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}ClassPosition:", session, pos);
-
-                    int realPos = -1;
-                    parseYamlInt(sessionYaml, path, &realPos);
+                    //parseYamlInt(qualifyResultsInfoYaml, path, &realPos);
+                    parseYamlInt(qualifyingPositionYaml, "ClassPosition:", &realPos);
                     ir_session_pointer->cars[carIdx].qualy.position = realPos + 1;
 
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}LastTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].qualy.lastTime);
-
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}FastestTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].qualy.fastestTime);
-                }
-                else if (sessionNameStr == "RACE") {
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}ClassPosition:", session, pos);
-
-                    int realPos = -1;
-                    parseYamlInt(sessionYaml, path, &realPos);
-                    ir_session_pointer->cars[carIdx].race.position = realPos + 1;
-
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}LastTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].race.lastTime);
-
-                    sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}FastestTime:", session, pos);
-                    parseYamlFloat(sessionYaml, path, &ir_session_pointer->cars[carIdx].race.fastestTime);
+                    //sprintf(path, "QualifyResultsInfo:Results:Position:{%d}FastestTime:", pos);
+                    //parseYamlFloat(qualifyResultsInfoYaml, path, &ir_session_pointer->cars[carIdx].qualy.fastestTime);
+                    parseYamlFloat(qualifyingPositionYaml, "FastestTime:", &ir_session_pointer->cars[carIdx].qualy.fastestTime);
                 }
             }
         }
     }
 
+    const char* sessionInfoYaml = strstr(sessionYaml, "SessionInfo:");
+    
+    // Session info (may override qual results from above, but that's ok since hopefully they're the same!)
+    for (int session = 0; ; ++session)
+    {
+
+        sprintf(path, "\n - SessionNum: %d", session);
+        const char* sessionNumYamlTmp = strstr(sessionInfoYaml, path);
+        if (sessionNumYamlTmp == nullptr) break;
+
+        const char* sessionNumYaml = sessionNumYamlTmp + 16; // +16 to skip the searched string
+        std::string sessionNameStr;
+        //sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionName:", session);
+        //if (!parseYamlStr(sessionInfoYaml, path, sessionNameStr)) {
+        if (!parseYamlStr(sessionNumYaml, "SessionName:", sessionNameStr)) {
+            break;
+        }
+            
+        SessionType thisSessionType = SessionType::UNKNOWN;
+        if (sessionNameStr == "PRACTICE")
+            thisSessionType = SessionType::PRACTICE;
+        else if (sessionNameStr == "QUALIFY")
+            thisSessionType = SessionType::QUALIFY;
+        else if (sessionNameStr == "RACE")
+            thisSessionType = SessionType::RACE;
+
+        if (session == ir_SessionNum.getInt()) { // Set the current session name
+            ir_session_pointer->sessionType = thisSessionType;
+        }
+
+        std::string str;
+        //sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionTime:", session);
+        //parseYamlStr(sessionInfoYaml, path, str);
+        parseYamlStr(sessionNumYaml, "SessionTime:", str);
+        ir_session_pointer->isUnlimitedTime = int(str == "unlimited");
+
+        //sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}SessionLaps:", session);
+        //parseYamlStr(sessionInfoYaml, path, str);
+        parseYamlStr(sessionNumYaml, "SessionLaps:", str);
+        ir_session_pointer->isUnlimitedLaps = int(str == "unlimited");
+
+        for (int pos = 1; pos < IR_MAX_CARS + 1; ++pos)
+        {
+            sprintf(path,"\n   - Position: %d", pos);
+            const char* sessionPositionYamlTmp = strstr(sessionNumYaml, path);
+            if (sessionPositionYamlTmp == nullptr) break;
+
+            const char* sessionPositionYaml = sessionPositionYamlTmp + 18; // +18 to skip the searched string
+
+            int carIdx = -1;
+            //sprintf(path, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}CarIdx:", session, pos);
+            //if (parseYamlInt(sessionInfoYaml, path, &carIdx))
+            if (parseYamlInt(sessionPositionYaml, "CarIdx:", &carIdx))
+            {
+                SessionPosTimes* curCarEditing = nullptr;
+
+                switch (thisSessionType) {
+                case SessionType::PRACTICE:
+                    curCarEditing = &ir_session_pointer->cars[carIdx].practice;
+                    break;
+                case SessionType::QUALIFY:
+                    curCarEditing = &ir_session_pointer->cars[carIdx].qualy;
+                    break;
+                case SessionType::RACE:
+                    curCarEditing = &ir_session_pointer->cars[carIdx].race;
+                    break;
+                }
+                if (curCarEditing == nullptr) continue;
+
+                int realPos = -1;
+                parseYamlInt(sessionPositionYaml, "ClassPosition:", &realPos);
+                curCarEditing->position = realPos + 1;
+
+                parseYamlFloat(sessionInfoYaml, "LastTime:", &curCarEditing->lastTime);
+
+                parseYamlFloat(sessionInfoYaml, "FastestTime:", &curCarEditing->fastestTime);
+
+            }
+        }
+    }
+    
     // SoF
     double sof = 0;
     int cnt = 0;
