@@ -91,6 +91,7 @@ struct Car
 
 struct Session
 {
+    bool            initialized = false;
     SessionType     sessionType = SessionType::UNKNOWN;
     bool            isReplay;
     Car             cars[IR_MAX_CARS];
@@ -408,6 +409,9 @@ extern irsdkCVar ir_LFSHshockVel_ST;    // float[6] LFSH shock velocity at 360 H
 
 extern Session ir_session;
 
+// Update the session string data. Parses YAML, send to another thread
+void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointer);
+
 // Keep the session data updated.
 // Will block for around 16 milliseconds.
 ConnectionStatus ir_tick();
@@ -435,7 +439,7 @@ int ir_getLapDeltaToLeader( int carIdx, int ldrIdx );
 float ir_getDeltaTime(int carIdx, int selfIdx);
 
 // Get laps remaining for sesion
-int ir_getLapsRemaining();
+float ir_getLapsRemaining();
 
 // Get session time remaining
 void ir_getSessionTimeRemaining(int& hours, int& mins, int& secs);

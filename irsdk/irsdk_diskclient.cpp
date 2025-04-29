@@ -95,17 +95,19 @@ bool irsdkDiskClient::openFile(const char *path)
 									//m_varBuf = NULL;
 								}
 							}
-
+							printf("Error reading varHeaders\n");
 							delete [] m_varHeaders;
 							m_varHeaders = NULL;
 						}
 					}
-
+					printf("Error reading sessionInfoString\n");
 					delete [] m_sessionInfoString;
 					m_sessionInfoString = NULL;
 				}
 			}
+			printf("Error reading subHeader\n");
 		}
+		printf("Error reading header\n");
 		fclose(m_ibtFile);
 		m_ibtFile = NULL;
 	}
@@ -136,6 +138,18 @@ bool irsdkDiskClient::getNextData()
 {
 	if(m_ibtFile)
 		return fread(m_varBuf, 1, m_header.bufLen, m_ibtFile) == (size_t)m_header.bufLen;
+
+	return false;
+}
+
+// iRon: Custom function so we can skip and read only the final samples
+// TODO: Move to a custom module to avoid modifying the API?
+bool irsdkDiskClient::skipData(int skipAmt)
+{
+	if (m_ibtFile && skipAmt >= 0)
+		return fseek(m_ibtFile, m_header.bufLen * skipAmt, SEEK_CUR) == 0;
+		//return fseek(m_varBufa, 1, m_header.bufLen, m_ibtFile) == (size_t)m_header.bufLen;
+
 
 	return false;
 }

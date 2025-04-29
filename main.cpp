@@ -331,7 +331,7 @@ int main()
             ir_printVariables();
 #endif
         }
-
+        
         if( ir_session.sessionType != prevSessionType )
         {
             for( Overlay* o : overlays )
@@ -464,9 +464,11 @@ int main()
             debugtimer_started = true;
         }
         debugtimeavg = (debugtimeavg / 10) * 9 + (float)(loopTimeDiff) / 10;
-        dbg("Main loop took %.4f (%i) microseconds", debugtimeavg, loopTimeDiff);
+        dbg("Main loop took %.4f (%05d) microseconds", debugtimeavg, loopTimeDiff);
 #   if defined(DEBUG_OVERLAY_TIME)
-        std::cout << std::format("{} (AVG:{:.4f}) microseconds - Main [{}]", loopTimeDiff, debugtimeavg, frameCnt-1) << std::endl;
+        if (loopTimeDiff > debugtimeavg * 1.5) {
+            std::cout << std::format("{} (AVG:{:.4f}) microseconds - Main [{}]", loopTimeDiff, debugtimeavg, frameCnt - 1) << std::endl;
+        }
 #   endif
         debugtime_start = std::chrono::high_resolution_clock::now();
         // This should remain in debug - END

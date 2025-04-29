@@ -134,6 +134,10 @@ protected:
 
     virtual void onUpdate()
     {
+
+        // Wait until we get car data
+        if (!ir_session.initialized) return;
+
         struct CarInfo {
             int     carIdx = 0;
             int     classIdx = 0;
@@ -678,12 +682,12 @@ protected:
 
             ir_getSessionTimeRemaining(hours, mins, secs);
             const int laps = max(ir_CarIdxLap.getInt(ir_session.driverCarIdx), ir_CarIdxLapCompleted.getInt(ir_session.driverCarIdx));
-            const int remainingLaps = ir_getLapsRemaining();
+            const float remainingLaps = ir_getLapsRemaining();
             const int irTotalLaps = ir_SessionLapsTotal.getInt();
-            int totalLaps = remainingLaps;
+            float totalLaps = remainingLaps;
             
             if (irTotalLaps == 32767)
-                totalLaps = laps + remainingLaps;
+                totalLaps = laps + remainingLaps + ir_CarIdxLapDistPct.getFloat(ir_session.driverCarIdx);
             else
                 totalLaps = irTotalLaps;
 
@@ -720,7 +724,7 @@ protected:
                 if (addSpaces) {
                     str += "       ";
                 }
-                str += std::format("Laps: {}/{}{}", laps, (irTotalLaps == 32767 ? "~" : ""), totalLaps);
+                str += std::format("Laps: {}/{}{:.2f}", laps, (irTotalLaps == 32767 ? "~" : ""), totalLaps);
                 addSpaces = true;
             }
 

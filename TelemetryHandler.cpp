@@ -13,14 +13,22 @@
 TelemetryHandler g_telemetryHandler;
 
 /////////////////////////////// Telemetry Reader
-void openTelemetry(const std::string path, TelemetryReader *telemetryReader) {
+void openTelemetry(const std::string path, TelemetryReader *telemetryReader, std::mutex *openTelemetryMutex) {
+	
+	if (!openTelemetryMutex->try_lock()) 
+	{
+		printf("Mutex not unlocked! Still processing the previous telemetry?\n");
+		return;
+	}
+
 	if (telemetryReader->init(path)) {
-		telemetryReader->skipExcessData();
 		g_telemetryHandler.switchTelemetryReader();
 	}
 	else {
 		printf("Telemetry read failed! %s\n", path.c_str());
 	}
+
+	openTelemetryMutex->unlock();
 }
 
 bool TelemetryReader::init(const std::string path)
@@ -43,77 +51,101 @@ bool TelemetryReader::init(const std::string path)
 
 		if (m_isOnTrack_idx != -1) {
 
-			const int MAX_STR = 512;
-			char tstr[MAX_STR];
+			//const int MAX_STR = 512;
+			//char tstr[MAX_STR];
 
-			if (1 == m_idk.getSessionStrVal("DriverInfo:DriverCarIdx:", tstr, MAX_STR))
-			{
-				for (int axle = 0; axle < 2; axle++) {
-					for (int sect = 0; sect < 6; sect++) {
-						m_telemetry_data_idx[axle][sect] = m_idk.getVarIdx(TelemetryHandlerStr[axle][sect]);
+			//if (1 == m_idk.getSessionStrVal("DriverInfo:DriverCarIdx:", tstr, MAX_STR))
+			//{
+			for (int axle = 0; axle < 2; axle++) {
+				for (int sect = 0; sect < 6; sect++) {
+					m_telemetry_data_idx[axle][sect] = m_idk.getVarIdx(TelemetryHandlerStr[axle][sect]);
+				}
+			}
+
+			skipExcessData();
+
+			// Read the last TH_MAX_BUFFERS values into the buffer
+			int i;
+			for (i = 0; i <= TH_MAX_BUFFERS; i++) {
+				if (m_idk.getNextData()) {
+					TelemetryData* td = &m_telemetry_buffer[i];
+					if (m_idk.getVarBool(m_isOnTrack_idx)) {
+						for (int axle = 0; axle < 2; axle++) {
+							for (int sect = 0; sect < 6; sect++) {
+								td->temp[axle][sect] = m_idk.getVarFloat(m_telemetry_data_idx[axle][sect]);
+							}
+						}
 					}
 				}
-				m_ready = true;
-				return true;
+				else {
+					break;
+				}
 			}
+			m_telemetry_buffer_maxidx = i;
+			m_idk.closeFile();
+			m_ready = true;
+			//printf("Loaded %d buffers\n", m_telemetry_buffer_maxidx);
+			return true;
+		//	}
 		}
 	}
 
 	return false;
 }
 
-std::optional<TelemetryData> TelemetryReader::processTelemetry()
+void TelemetryReader::processTelemetry(TelemetryData& td)
 {
-	dbg("Telemetry active: %d", ir_IsDiskLoggingActive.getBool());
-	if (!m_ready) return std::nullopt;
+	if (!m_ready) return;
 
-	// No more data, leave graph as is
-	if (!m_idk.getNextData()) {
-		m_idk.closeFile();
-		return std::nullopt;
+	if (m_telemetry_buffer_idx >= m_telemetry_buffer_maxidx) {
+		finish();
+		return;
 	}
 
-	// isOnTrack indicates that the player is in his car and ready to race
-	bool isOnTrack = m_idk.getVarBool(m_isOnTrack_idx);
-	
-
-	TelemetryData td;
-	// is this a valid data point?
-	if (isOnTrack) {
-		for (int axle = 0; axle < 2; axle++) {
-			for (int sect = 0; sect < 6; sect++) {
-				td.temp[axle][sect] = m_idk.getVarFloat(m_telemetry_data_idx[axle][sect]);
-			}
-		}
-		return td;
-	}
-	
-	return std::nullopt;
+	// Copy 12 floats
+	memcpy(&td, &m_telemetry_buffer[m_telemetry_buffer_idx], sizeof(TelemetryData));
+	m_telemetry_buffer_idx++;
 }
 
 void TelemetryReader::skipExcessData() {
 	//printf("Data count: %d\n", m_idk.getDataCount());
 
-	// Only leave the last 64 data points (for a bit of changüí)
-	for (int i = 64; i < m_idk.getDataCount(); i++) {
-		//printf("%d %d\n", i, m_idk.getNextData());
-		m_idk.getNextData();
+	// Only leave the last TH_MAX_BUFFERS data points 
+	if (!m_idk.skipData(std::max(0, m_idk.getDataCount() - TH_MAX_BUFFERS))) {
+		printf("Error skipping data!");
+		finish();
 	}
 }
 
 void TelemetryReader::finish() {
 	m_ready = false;
+	m_telemetry_buffer_idx = 0;
 	m_idk.closeFile();
+}
+
+/////////////////////// Telemetry Writer
+
+bool TelemetryWriter::init(const std::string path) {
+	return true;
 }
 
 ////////////////////// Telemetry Handler
 
+TelemetryHandler::TelemetryHandler() {
+	TelemetryData m_telemetry_data;
+}
+
 void TelemetryHandler::updateTelemetryFile(const std::string path) {
 
+	// When the first telemetry filename comes in, skip and save the filename.
+	// When the second telemetry filename comes in, we process the first one.
+
+	// FIXME: If you don't close the overlay between sessions, it will open the Last-session-Last-telemetry file for one second instead of starting at 0.0
+	
 	if (!m_oldPath.empty() && path != m_oldPath ) {
 
 		//printf("Opening %s\n", m_oldPath.c_str());
-		m_openTelemetryThread = std::thread( openTelemetry, m_oldPath, &m_telemetryReader[!m_telemetryReader_cur]); // !cur, dumbass
+		m_openTelemetryThread = std::thread(openTelemetry, m_oldPath, &m_telemetryReader[!m_telemetryReader_cur], &m_openTelemetryThread_mtx); // !cur, dumbass
 		m_openTelemetryThread.detach();
 
 	}
@@ -124,13 +156,13 @@ void TelemetryHandler::updateTelemetryFile(const std::string path) {
 	}
 }
 
-TelemetryData TelemetryHandler::processTelemetry() {
+TelemetryData* TelemetryHandler::processTelemetry() {
 
-	std::optional<TelemetryData> td = m_telemetryReader[m_telemetryReader_cur].processTelemetry();
+	m_telemetryReader[m_telemetryReader_cur].processTelemetry(m_telemetry_data);
 	// If no new value, return old data
-	if (td.has_value()) m_telemetry_data = td.value();
+	//if (td.has_value()) m_telemetry_data = td.value();
 	
-	return m_telemetry_data;
+	return &m_telemetry_data;
 
 }
 

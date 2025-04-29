@@ -97,7 +97,7 @@ class OverlayTires : public Overlay
                 m_renderTarget->EndDraw();
                 return;
             }
-            TelemetryData td = g_telemetryHandler.processTelemetry();
+            TelemetryData* td = g_telemetryHandler.processTelemetry();
 
             m_columns.layout( (float)m_width - 20 );
             m_renderTarget->BeginDraw();
@@ -124,11 +124,11 @@ class OverlayTires : public Overlay
 
                     rectX = clm->textL;
                     r = { rectX, rectY, rectX+w, rectY+rectH };
-                    m_brush->SetColor( getTireColor(td.temp[axle][sect]) ); // temp
+                    m_brush->SetColor( getTireColor(td->temp[axle][sect]) ); // temp
                     m_renderTarget->FillRectangle( &r, m_brush.Get() );
 
                     m_brush->SetColor( col );
-                    swprintf( s, _countof(s), L"%.1f", td.temp[axle][sect]); // temp
+                    swprintf( s, _countof(s), L"%.1f", td->temp[axle][sect]); // temp
                     m_text.render( m_renderTarget.Get(), s, m_textFormat.Get(), clm->textL, clm->textR, tempY, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
 
 				}
@@ -138,7 +138,7 @@ class OverlayTires : public Overlay
         }
 
         float4 getTireColor(const float tyreData) {
-            const float lowTemp = 40;
+            const float lowTemp = 45;
             const float goodTemp = 60;
             const float highTemp = 90;
 

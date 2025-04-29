@@ -92,6 +92,9 @@ class OverlayRelative : public Overlay
 
         virtual void onUpdate()
         {
+            // Wait until we get car data
+            if (!ir_session.initialized) return;
+
             struct CarInfo {
                 int     carIdx = 0;
                 float   delta = 0;
@@ -100,6 +103,8 @@ class OverlayRelative : public Overlay
                 int     lapDelta = 0;
                 int     pitAge = 0;
                 float   last = 0;
+                bool    overallLeader = false;
+                bool    classLeader = false;
             };
             std::vector<CarInfo> relatives;
             relatives.reserve( IR_MAX_CARS );
@@ -107,6 +112,7 @@ class OverlayRelative : public Overlay
             const int lapcountSelf = ir_Lap.getInt();
             const float selfLapDistPct = ir_LapDistPct.getFloat();
             const float SelfEstLapTime = ir_CarIdxEstTime.getFloat(ir_session.driverCarIdx);
+            const int classSelf = ir_PlayerCarClass.getInt();
             // Populate cars with the ones for which a relative/delta comparison is valid
             for( int i=0; i<IR_MAX_CARS; ++i )
             {
@@ -169,6 +175,8 @@ class OverlayRelative : public Overlay
                     ci.wrappedSum = wrappedSum;
                     ci.pitAge = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
                     ci.last = ir_CarIdxLastLapTime.getFloat(i);
+                    ci.classLeader = (ir_CarIdxClass.getInt(i) == classSelf) && (ir_CarIdxClassPosition.getInt(i) == 1);
+                    ci.overallLeader = ir_CarIdxPosition.getInt(i) == 1;
                     relatives.push_back( ci );
                 }
             }
@@ -463,7 +471,7 @@ class OverlayRelative : public Overlay
                             col.a *= 0.5f;
 
                         const float dx = 2;
-                        const float dy = car.isSelf || car.isPaceCar ? 4.0f : 0.0f;
+                        const float dy = (car.isSelf || car.isPaceCar || ci.classLeader || ci.overallLeader ? 4.0f : 0.0f);
                         r = {e-dx, y+2-dy, e+dx, y+h-2+dy};
                         m_brush->SetColor( col );
                         m_renderTarget->FillRectangle( &r, m_brush.Get() );
