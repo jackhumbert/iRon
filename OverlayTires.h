@@ -87,7 +87,7 @@ class OverlayTires : public Overlay
         virtual void onUpdate()
         {
 
-            if (ir_session.sessionType == SessionType::QUALIFY || ir_session.sessionType == SessionType::RACE) {
+            if (ir_session->sessionType == SessionType::QUALIFY || ir_session->sessionType == SessionType::RACE) {
 
                 wchar_t s[64] = L"Unavailable outside of practice";
                 float w = computeTextExtent(s, m_dwriteFactory.Get(), m_textFormat.Get()).x;

@@ -136,7 +136,7 @@ protected:
     {
 
         // Wait until we get car data
-        if (!ir_session.initialized) return;
+        if (!ir_session->initialized) return;
 
         struct CarInfo {
             int     carIdx = 0;
@@ -165,12 +165,12 @@ protected:
 
         // Init array
         map<int, classBestLap> bestLapClass;
-        int selfPosition = ir_getPosition(ir_session.driverCarIdx);
+        int selfPosition = ir_getPosition(ir_session->driverCarIdx);
         boolean hasPacecar = false;
 
         for( int i=0; i<IR_MAX_CARS; ++i )
         {
-            const Car& car = ir_session.cars[i];
+            const Car& car = ir_session->cars[i];
 
             if (car.isPaceCar || car.isSpectator || car.userName.empty()) {
                 hasPacecar = true;
@@ -182,14 +182,14 @@ protected:
             ci.lapCount     = max( ir_CarIdxLap.getInt(i), ir_CarIdxLapCompleted.getInt(i) );
             ci.position     = ir_getPosition(i);
             ci.pctAroundLap = ir_CarIdxLapDistPct.getFloat(i);
-            ci.gap          = ir_session.sessionType!=SessionType::RACE ? 0 : -ir_CarIdxF2Time.getFloat(i);
+            ci.gap          = ir_session->sessionType!=SessionType::RACE ? 0 : -ir_CarIdxF2Time.getFloat(i);
             ci.last         = ir_CarIdxLastLapTime.getFloat(i);
             ci.pitAge       = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
             ci.positionsChanged = ir_getPositionsChanged(i);
             ci.classIdx     = ir_getClassId(ci.carIdx);
 
             ci.best         = ir_CarIdxBestLapTime.getFloat(i);
-            if (ir_session.sessionType == SessionType::RACE && ir_SessionState.getInt() <= irsdk_StateWarmup || ir_session.sessionType == SessionType::QUALIFY && ci.best <= 0) {
+            if (ir_session->sessionType == SessionType::RACE && ir_SessionState.getInt() <= irsdk_StateWarmup || ir_session->sessionType == SessionType::QUALIFY && ci.best <= 0) {
                 ci.best = car.qualy.fastestTime;
                 for (int j = 0; j < 5; ++j) {
                     m_avgL5Times[ci.carIdx][j] = 0.0;
@@ -197,7 +197,7 @@ protected:
             }
                 
             if (ir_CarIdxTrackSurface.getInt(ci.carIdx) == irsdk_NotInWorld) {
-                switch (ir_session.sessionType) {
+                switch (ir_session->sessionType) {
                     case SessionType::QUALIFY:
                         ci.best = car.qualy.fastestTime;
                         ci.last = car.qualy.lastTime;
@@ -253,7 +253,7 @@ protected:
         //if (!playerCarIdx) return; // Couldn't get player idx, probably JUST loaded into a session
         const CarInfo ciSelf = carInfo[playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0];
         // Sometimes the offset is not necessary. In a free practice session it didn't need it, but in a qualifying it did
-        //const CarInfo ciSelf = carInfo[ir_session.driverCarIdx];
+        //const CarInfo ciSelf = carInfo[ir_session->driverCarIdx];
         
         // Sort by position
         sort( carInfo.begin(), carInfo.end(),
@@ -281,9 +281,9 @@ protected:
             }
 
             ci.lapGap = ir_getLapDeltaToLeader( ci.carIdx, classLeader);
-            ci.delta = ir_getDeltaTime( ci.carIdx, ir_session.driverCarIdx );
+            ci.delta = ir_getDeltaTime( ci.carIdx, ir_session->driverCarIdx );
 
-            if (ir_session.sessionType != SessionType::RACE) {
+            if (ir_session->sessionType != SessionType::RACE) {
                 if(classLeader != -1) {
                     ci.gap -= classLeaderGapToOverall;
                     ci.gap = ci.gap < 0 ? 0 : ci.gap;
@@ -469,7 +469,7 @@ protected:
             }
 
             const CarInfo&  ci  = carInfo[i];
-            const Car&      car = ir_session.cars[ci.carIdx];
+            const Car&      car = ir_session->cars[ci.carIdx];
 
             // Dim color if player is disconnected.
             // TODO: this isn't 100% accurate, I think, because a car might be "not in world" while the player
@@ -681,13 +681,13 @@ protected:
             int hours, mins, secs;
 
             ir_getSessionTimeRemaining(hours, mins, secs);
-            const int laps = max(ir_CarIdxLap.getInt(ir_session.driverCarIdx), ir_CarIdxLapCompleted.getInt(ir_session.driverCarIdx));
+            const int laps = max(ir_CarIdxLap.getInt(ir_session->driverCarIdx), ir_CarIdxLapCompleted.getInt(ir_session->driverCarIdx));
             const float remainingLaps = ir_getLapsRemaining();
             const int irTotalLaps = ir_SessionLapsTotal.getInt();
             float totalLaps = remainingLaps;
             
             if (irTotalLaps == 32767)
-                totalLaps = laps + remainingLaps + ir_CarIdxLapDistPct.getFloat(ir_session.driverCarIdx);
+                totalLaps = laps + remainingLaps + ir_CarIdxLapDistPct.getFloat(ir_session->driverCarIdx);
             else
                 totalLaps = irTotalLaps;
 
@@ -698,7 +698,7 @@ protected:
             bool addSpaces = false;
 
             if (g_cfg.getBool(m_name, "show_SoF", true)) {
-                int sof = ir_session.sof;
+                int sof = ir_session->sof;
                 if (sof < 0) sof = 0;
                 str += std::format("SoF: {}", sof);
                 addSpaces = true;

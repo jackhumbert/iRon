@@ -323,7 +323,10 @@ irsdkCVar ir_LFSHshockDefl_ST("LFSHshockDefl_ST");    // float[6] LFSH shock def
 irsdkCVar ir_LFSHshockVel("LFSHshockVel");    // float[1] LFSH shock velocity (m/s)
 irsdkCVar ir_LFSHshockVel_ST("LFSHshockVel_ST");    // float[6] LFSH shock velocity at 360 Hz (m/s)
 
-Session ir_session;
+// Initialize ir_session
+Session ir_session_data[2];
+bool ir_session_cur = 0;
+Session* ir_session = &ir_session_data[0];
 
 static bool parseYamlInt(const char *yamlStr, const char *path, int *dest)
 {
@@ -670,10 +673,14 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
     ir_session_pointer->sof = int(sof / cnt);
     
     ir_session_pointer->initialized = true;
+    ir_session_cur = !ir_session_cur; // switch to this session data
+
+    ir_session = ir_session_pointer;
+
     ir_handleConfigChange();
 }
 
-static bool thread_it = false;
+static bool thread_it = true;
 ConnectionStatus ir_tick()
 {
     irsdkClient& irsdk = irsdkClient::instance();
@@ -681,25 +688,22 @@ ConnectionStatus ir_tick()
     irsdk.waitForData(16);
 
     if (!irsdk.isConnected()) {
-        ir_session.initialized = false;
+        ir_session->initialized = false;
         return ConnectionStatus::DISCONNECTED;
     }
         
 
     if( irsdk.wasSessionStrUpdated() )
     {
-        // TODO: Temporarily not de-initializing (?) ir_session
-        //      To try to fix the obvious flickering.
-        //ir_session.initialized = false;
-        // TODO: Added ir_session as a pointer to allow for swapping if needed. Remove?
+        ir_session_data[!ir_session_cur].initialized = false;
         if (thread_it) {
-            std::thread sessionStrUpdate = std::thread(updateSessionStringData, irsdk.getSessionStr(), &ir_session);
+            std::thread sessionStrUpdate = std::thread(updateSessionStringData, irsdk.getSessionStr(), &ir_session_data[!ir_session_cur]);
             sessionStrUpdate.detach();
         }
         else {
 
             std::chrono::steady_clock::time_point debugTimeStart = std::chrono::high_resolution_clock::now();
-            updateSessionStringData(irsdk.getSessionStr(), &ir_session);
+            updateSessionStringData(irsdk.getSessionStr(), &ir_session_data[!ir_session_cur]);
             std::chrono::steady_clock::time_point debugTimeEnd = std::chrono::high_resolution_clock::now();
             
             long long debugTimeDiff = std::chrono::duration_cast<std::chrono::microseconds>(debugTimeEnd - debugTimeStart).count();
@@ -713,7 +717,7 @@ ConnectionStatus ir_tick()
     const bool resetPitAge = ir_SessionState.getInt() == irsdk_StateWarmup;
     for( int carIdx=0; carIdx<IR_MAX_CARS; ++carIdx )
     {
-        Car& car = ir_session.cars[carIdx];
+        Car& car = ir_session->cars[carIdx];
         if( resetPitAge )
             car.lastLapInPits = 0;
         if( ir_SessionState.getInt() >= 0 /* work around getting garbage sometimes (?) */ && ir_CarIdxOnPitRoad.getBool(carIdx) )
@@ -733,7 +737,7 @@ void ir_handleConfigChange()
 
     for( int carIdx=0; carIdx<IR_MAX_CARS; ++carIdx )
     {
-        Car& car = ir_session.cars[carIdx];
+        Car& car = ir_session->cars[carIdx];
 
         car.isBuddy = 0;
         for( const std::string& name : buddies ) {
@@ -763,7 +767,7 @@ float ir_estimateLaptime()
     float best = ir_LapBestLapTime.getFloat();
     if( best > 0 )
         return best;
-    return ir_session.cars[ir_session.driverCarIdx].carClassEstLapTime;
+    return ir_session->cars[ir_session->driverCarIdx].carClassEstLapTime;
 }
 
 int ir_getPosition( int carIdx )
@@ -773,15 +777,15 @@ int ir_getPosition( int carIdx )
     if( pos > 0 )
         return pos;
 
-    pos = ir_session.cars[carIdx].race.position;
+    pos = ir_session->cars[carIdx].race.position;
     if( pos > 0 )
         return pos;
 
-    pos = ir_session.cars[carIdx].qualy.position;
+    pos = ir_session->cars[carIdx].qualy.position;
     if( pos > 0 )
         return pos;
 
-    pos = ir_session.cars[carIdx].practice.position;
+    pos = ir_session->cars[carIdx].practice.position;
     if( pos > 0 )
         return pos;
 
@@ -792,7 +796,7 @@ int ir_getPositionsChanged(int carIdx)
 {
 
     int posAct = ir_CarIdxClassPosition.getInt(carIdx);
-    int posQualy = ir_session.cars[carIdx].qualy.position;
+    int posQualy = ir_session->cars[carIdx].qualy.position;
 
     if (posQualy > 0 && posAct > 0)
         return posQualy - posAct;
@@ -802,7 +806,7 @@ int ir_getPositionsChanged(int carIdx)
 
 int ir_getLapDeltaToLeader( int carIdx, int ldrIdx )
 {
-    if( ir_session.sessionType!=SessionType::RACE || ir_isPreStart() || carIdx < 0 || ldrIdx < 0 )
+    if( ir_session->sessionType!=SessionType::RACE || ir_isPreStart() || carIdx < 0 || ldrIdx < 0 )
         return 0;
 
     const int carLapCount = std::max( ir_CarIdxLap.getInt(carIdx), ir_CarIdxLapCompleted.getInt(carIdx) );
@@ -864,7 +868,7 @@ int ir_getClassId(int carIdx)
     if (id > 0)
         return id;
 
-    id = ir_session.cars[carIdx].classId;
+    id = ir_session->cars[carIdx].classId;
     if (id > 0)
         return id;
 

@@ -57,7 +57,6 @@ class OverlayRelative : public Overlay
 
         virtual void onConfigChanged()
         {
-            m_text.reset( m_dwriteFactory.Get() );
 
             const std::string font = g_cfg.getString( m_name, "font", "Microsoft YaHei UI" );
             const float fontSize = g_cfg.getFloat( m_name, "font_size", DefaultFontSize );
@@ -93,7 +92,7 @@ class OverlayRelative : public Overlay
         virtual void onUpdate()
         {
             // Wait until we get car data
-            if (!ir_session.initialized) return;
+            if (!ir_session->initialized) return;
 
             struct CarInfo {
                 int     carIdx = 0;
@@ -108,15 +107,15 @@ class OverlayRelative : public Overlay
             };
             std::vector<CarInfo> relatives;
             relatives.reserve( IR_MAX_CARS );
-            const float ownClassEstLaptime = ir_session.cars[ir_session.driverCarIdx].carClassEstLapTime;
+            const float ownClassEstLaptime = ir_session->cars[ir_session->driverCarIdx].carClassEstLapTime;
             const int lapcountSelf = ir_Lap.getInt();
             const float selfLapDistPct = ir_LapDistPct.getFloat();
-            const float SelfEstLapTime = ir_CarIdxEstTime.getFloat(ir_session.driverCarIdx);
+            const float SelfEstLapTime = ir_CarIdxEstTime.getFloat(ir_session->driverCarIdx);
             const int classSelf = ir_PlayerCarClass.getInt();
             // Populate cars with the ones for which a relative/delta comparison is valid
             for( int i=0; i<IR_MAX_CARS; ++i )
             {
-                const Car& car = ir_session.cars[i];
+                const Car& car = ir_session->cars[i];
 
                 const int lapcountCar = ir_CarIdxLap.getInt(i);
 
@@ -162,7 +161,7 @@ class OverlayRelative : public Overlay
                     // Also reset it during initial pacing, since iRacing for some reason starts counting
                     // during the pace lap but then resets the counter a couple seconds in, confusing the logic.
                     // And consider the pace car in the same lap as us, too.
-                    if( ir_session.sessionType!=SessionType::RACE || ir_isPreStart() || car.isPaceCar )
+                    if( ir_session->sessionType!=SessionType::RACE || ir_isPreStart() || car.isPaceCar )
                     {
                         lapDelta = 0;
                     }
@@ -189,7 +188,7 @@ class OverlayRelative : public Overlay
             int selfCarInfoIdx = -1;
             for( int i=0; i<(int)relatives.size(); ++i )
             {
-                if( relatives[i].carIdx == ir_session.driverCarIdx ) {
+                if( relatives[i].carIdx == ir_session->driverCarIdx ) {
                     selfCarInfoIdx = i;
                     break;
                 }
@@ -247,7 +246,7 @@ class OverlayRelative : public Overlay
                     continue;
 
                 const CarInfo& ci  = relatives[i];
-                const Car&     car = ir_session.cars[ci.carIdx];
+                const Car&     car = ir_session->cars[ci.carIdx];
 
                 // Determine text color
                 float4 col = sameLapCol;
@@ -390,7 +389,7 @@ class OverlayRelative : public Overlay
                 char  tempUnit = 'C';
 
                 double sessionTime = ir_SessionTimeRemain.getDouble();
-                int laps = std::max(ir_CarIdxLap.getInt(ir_session.driverCarIdx), ir_CarIdxLapCompleted.getInt(ir_session.driverCarIdx));
+                int laps = std::max(ir_CarIdxLap.getInt(ir_session->driverCarIdx), ir_CarIdxLapCompleted.getInt(ir_session->driverCarIdx));
 
                 const bool   sessionIsTimeLimited = ir_SessionLapsTotal.getInt() == 32767 && ir_SessionTimeRemain.getDouble() < 48.0 * 3600.0;  // most robust way I could find to figure out whether this is a time-limited session (info in session string is often misleading)
                 const int    remainingLaps = sessionIsTimeLimited ? int(0.5 + sessionTime / ir_estimateLaptime()) : (ir_SessionLapsRemainEx.getInt() != 32767 ? ir_SessionLapsRemainEx.getInt() : -1);
@@ -401,7 +400,7 @@ class OverlayRelative : public Overlay
 
                 m_brush->SetColor(float4(1, 1, 1, 0.4f));
                 m_renderTarget->DrawLine(float2(0, ybottom), float2((float)m_width, ybottom), m_brush.Get());
-                swprintf(s, _countof(s), L"SoF: %d      Track Temp: %.1f°%c      Session end: %d:%02d:%02d       Laps: %d/%d", ir_session.sof, trackTemp, tempUnit, hours, mins, secs, laps, remainingLaps);
+                swprintf(s, _countof(s), L"SoF: %d      Track Temp: %.1f°%c      Session end: %d:%02d:%02d       Laps: %d/%d", ir_session->sof, trackTemp, tempUnit, hours, mins, secs, laps, remainingLaps);
                 y = m_height - (m_height - ybottom) / 2;
                 m_brush->SetColor(headerCol);
                 m_text.render(m_renderTarget.Get(), s, m_textFormat.Get(), xoff, (float)m_width - 2 * xoff, y, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER);
@@ -437,7 +436,7 @@ class OverlayRelative : public Overlay
                     for( int i=0; i<(int)relatives.size(); ++i )
                     {
                         const CarInfo& ci     = relatives[i];
-                        const Car&     car    = ir_session.cars[ci.carIdx];
+                        const Car&     car    = ir_session->cars[ci.carIdx];
 
                         if( phase == 0 && ci.lapDelta >= 0 )
                             continue;
@@ -454,7 +453,7 @@ class OverlayRelative : public Overlay
                         
                         float e = ir_CarIdxLapDistPct.getFloat(ci.carIdx);
 
-                        const float eself = ir_CarIdxLapDistPct.getFloat(ir_session.driverCarIdx);
+                        const float eself = ir_CarIdxLapDistPct.getFloat(ir_session->driverCarIdx);
 
                         if( minimapIsRelative )
                         {
