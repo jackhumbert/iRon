@@ -57,6 +57,7 @@ class OverlayRelative : public Overlay
 
         virtual void onConfigChanged()
         {
+            m_text.reset( m_dwriteFactory.Get() );
 
             const std::string font = g_cfg.getString( m_name, "font", "Microsoft YaHei UI" );
             const float fontSize = g_cfg.getFloat( m_name, "font_size", DefaultFontSize );

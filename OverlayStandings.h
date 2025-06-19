@@ -250,8 +250,9 @@ protected:
         }
 
         const int playerCarIdx = ir_PlayerCarIdx.getInt();
+        const int ciSelfIdx = playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0; // TODO: Sometimes this fails in Release mode?
         //if (!playerCarIdx) return; // Couldn't get player idx, probably JUST loaded into a session
-        const CarInfo ciSelf = carInfo[playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0];
+        const CarInfo ciSelf = carInfo[ciSelfIdx];
         // Sometimes the offset is not necessary. In a free practice session it didn't need it, but in a qualifying it did
         //const CarInfo ciSelf = carInfo[ir_session->driverCarIdx];
         

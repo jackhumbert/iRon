@@ -648,9 +648,9 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
                 parseYamlInt(sessionPositionYaml, "ClassPosition:", &realPos);
                 curCarEditing->position = realPos + 1;
 
-                parseYamlFloat(sessionInfoYaml, "LastTime:", &curCarEditing->lastTime);
+                parseYamlFloat(sessionPositionYaml, "LastTime:", &curCarEditing->lastTime);
 
-                parseYamlFloat(sessionInfoYaml, "FastestTime:", &curCarEditing->fastestTime);
+                parseYamlFloat(sessionPositionYaml, "FastestTime:", &curCarEditing->fastestTime);
 
             }
         }

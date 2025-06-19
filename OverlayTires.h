@@ -26,6 +26,7 @@ SOFTWARE.
 
 //#include <vector>
 #include <algorithm>
+#include <string>
 #include "Overlay.h"
 //#include "iracing.h"
 #include "Config.h"
@@ -82,6 +83,12 @@ class OverlayTires : public Overlay
             m_columns.add( (int)Columns::RM, m_columnWidth , m_fontSize/2 );
             m_columns.add( (int)Columns::RR, m_columnWidth , m_fontSize/2 );
 
+            const int selfCarId = ir_session->cars[ir_session->driverCarIdx].carID;
+            
+            std::string mod_name = std::format("{}_{}", m_name, selfCarId);
+            m_lowTemp = g_cfg.getFloat(mod_name, "TempLow", 45);
+            m_goodTemp = g_cfg.getFloat(mod_name, "TempGood", 60);
+            m_highTemp = g_cfg.getFloat(mod_name, "TempHigh", 90);
         }
 
         virtual void onUpdate()
@@ -114,6 +121,11 @@ class OverlayTires : public Overlay
             float rectH = max_height - m_fontSize*3;
             float rectX, rectY, tempY, wearY;
 
+            const int selfCarId = ir_session->cars[ir_session->driverCarIdx].carID;
+            swprintf( s, _countof(s), L"CarID: %i", selfCarId); // carID
+            m_brush->SetColor( col );
+            m_text.render( m_renderTarget.Get(), s, m_textFormatSmall.Get(), 5, 100, 10, m_brush.Get(), DWRITE_TEXT_ALIGNMENT_CENTER );
+
 		    for (int axle = 0; axle < 2; axle++) {
                 wearY = std::max(xoff, ((xoff/2) + max_height) * axle);
                 rectY = wearY + m_fontSize*0.5f;
@@ -138,12 +150,9 @@ class OverlayTires : public Overlay
         }
 
         float4 getTireColor(const float tyreData) {
-            const float lowTemp = 45;
-            const float goodTemp = 60;
-            const float highTemp = 90;
 
-            float red = std::min(1.0f, std::max(0.0f, ( (tyreData-goodTemp) / (highTemp-goodTemp) )));
-            float blue = std::min(1.0f, std::max(0.0f, ( (goodTemp-tyreData) / (goodTemp-lowTemp) )));
+            float red = std::min(1.0f, std::max(0.0f, ( (tyreData-m_goodTemp) / (m_highTemp-m_goodTemp) )));
+            float blue = std::min(1.0f, std::max(0.0f, ( (m_goodTemp-tyreData) / (m_goodTemp-m_lowTemp) )));
             float green = 1.0f - (red + blue);
 
             return float4(red, green, blue, 1.0f);
@@ -163,4 +172,7 @@ class OverlayTires : public Overlay
         TextCache    m_text;
         float        m_fontSize;
         float        m_columnWidth;
+        float        m_lowTemp;
+        float        m_goodTemp;
+        float        m_highTemp;
 };

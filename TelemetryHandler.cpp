@@ -41,7 +41,7 @@ bool TelemetryReader::init(const std::string path)
 	if (!done_open)
 	{
 		printf("Telemetry read failed! (retrying) %s\n", path.c_str());
-		Sleep(2);
+		Sleep(50);
 		done_open = m_idk.openFile(path.c_str());
 	}
 
