@@ -224,6 +224,7 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="iracing.cpp" />
     <ClCompile Include="irsdk\irsdk_client.cpp" />
+    <ClCompile Include="irsdk\irsdk_diskclient.cpp" />
     <ClCompile Include="irsdk\irsdk_utils.cpp" />
     <ClCompile Include="irsdk\yaml_parser.cpp" />
     <ClCompile Include="main.cpp" />
@@ -232,6 +233,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
+    <ClInclude Include="irsdk\irsdk_diskclient.h" />
     <ClInclude Include="OverlayCover.h" />
     <ClInclude Include="OverlayDDU.h" />
     <ClInclude Include="OverlayDebug.h" />

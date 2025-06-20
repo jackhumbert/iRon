@@ -56,7 +56,6 @@ bool g_dbgOverlayEnabled;
     #include <chrono>
     
     //#define DEBUG_DUMP_VARS
-    
 #endif
 using namespace Microsoft::WRL;
 using namespace std;
@@ -302,7 +301,7 @@ int main()
     while( true )
     {
         ConnectionStatus prevStatus       = status;
-        SessionType      prevSessionType  = ir_session.sessionType;
+        SessionType      prevSessionType  = g_ir_session->sessionType;
 
         // Refresh connection and session info
         status = ir_tick();
@@ -324,14 +323,14 @@ int main()
             ir_printVariables();
 #endif
         }
-
-        if( ir_session.sessionType != prevSessionType )
+        
+        if( g_ir_session->sessionType != prevSessionType )
         {
             for( Overlay* o : overlays )
                 o->sessionChanged();
         }
 
-        dbg( "connection status: %s, session type: %s, session state: %d, pace mode: %d, on track: %d, flags: 0x%X", ConnectionStatusStr[(int)status], SessionTypeStr[(int)ir_session.sessionType], ir_SessionState.getInt(), ir_PaceMode.getInt(), (int)ir_IsOnTrackCar.getBool(), ir_SessionFlags.getInt() );
+        dbg( "connection status: %s, session type: %s, session state: %d, pace mode: %d, on track: %d, flags: 0x%X", ConnectionStatusStr[(int)status], SessionTypeStr[(int)g_ir_session->sessionType], ir_SessionState.getInt(), ir_PaceMode.getInt(), (int)ir_IsOnTrackCar.getBool(), ir_SessionFlags.getInt() );
         
         // Update/render overlays
         {
@@ -414,6 +413,7 @@ int main()
                     case (int)Hotkey::Debug:
                         const bool newDebugStatus = !g_cfg.getBool("OverlayDebug", "enabled", true);
                         g_cfg.setBool( "OverlayDebug", "enabled", newDebugStatus);
+                        // we use this global so we can ignore the "dbg" function when overlayDebug is closed
                         g_dbgOverlayEnabled = newDebugStatus;
                         break;
                     }
@@ -442,9 +442,11 @@ int main()
             debugtimer_started = true;
         }
         debugtimeavg = (debugtimeavg / 10) * 9 + (float)(loopTimeDiff) / 10;
-        dbg("Main loop took %.4f (%i) microseconds", debugtimeavg, loopTimeDiff);
+        dbg("Main loop took %.4f (%05d) microseconds", debugtimeavg, loopTimeDiff);
 #   if defined(DEBUG_OVERLAY_TIME)
-        std::cout << std::format("Main loop took {:.4f} ({}) microseconds", debugtimeavg, loopTimeDiff) << std::endl;
+        if (loopTimeDiff > debugtimeavg * 1.5) {
+            std::cout << std::format("{} (AVG:{:.4f}) microseconds - Main [{}]", loopTimeDiff, debugtimeavg, frameCnt - 1) << std::endl;
+        }
 #   endif
         debugtime_start = std::chrono::high_resolution_clock::now();
         // This should remain in debug - END
