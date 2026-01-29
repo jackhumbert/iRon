@@ -166,7 +166,8 @@ protected:
         // Init array
         map<int, classBestLap> bestLapClass;
         int selfPosition = ir_getPosition(g_ir_session->driverCarIdx);
-        int ownClass = ir_PlayerCarClass.getInt();
+        int selfClass = ir_PlayerCarClass.getInt();
+        const int playerCarIdx = ir_PlayerCarIdx.getInt();
         boolean hasPacecar = false;
 
         for( int i=0; i<IR_MAX_CARS; ++i )
@@ -250,13 +251,11 @@ protected:
                 string str = formatLaptime(pair.second.best);
         }
 
-        const int playerCarIdx = ir_PlayerCarIdx.getInt();
-        const int ciSelfIdx = playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0; // TODO: Sometimes this fails in Release mode?
-        //if (!playerCarIdx) return; // Couldn't get player idx, probably JUST loaded into a session
-        CarInfo ciSelf;
-        memcpy(&ciSelf, &carInfo[ciSelfIdx], sizeof(CarInfo));
+        // Cache our own Last 5 laps for colouring the delta
+        const int ciSelfIdx = playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0;
+        const float selfLast5Laps = carInfo[ciSelfIdx].l5;
         
-        // Sort by position
+        // Sort by position    # THIS INVALIDATES ciSelfIdx!
         sort( carInfo.begin(), carInfo.end(),
             []( const CarInfo& a, const CarInfo& b ) {
                 const int ap = a.position<=0 ? INT_MAX : a.position;
@@ -271,7 +270,7 @@ protected:
         for( int i=0; i<(int)carInfo.size(); ++i )
         {
             CarInfo&       ci       = carInfo[i];
-            if (ci.classId != ownClass)
+            if (ci.classId != selfClass)
                 continue;
 
             carsInClass++;
@@ -409,15 +408,15 @@ protected:
         }
         else {
             // cars to add ahead = total cars - position
-            numAheadDrivers += max((ciSelf.position - carsInClass + numBehindDrivers), 0);
-            numBehindDrivers -= min(max((ciSelf.position - carsInClass + numBehindDrivers), 0), 2);
+            numAheadDrivers += max((selfPosition - carsInClass + numBehindDrivers), 0);
+            numBehindDrivers -= min(max((selfPosition - carsInClass + numBehindDrivers), 0), 2);
             numTopDrivers += max(carsToDraw - (numTopDrivers+numAheadDrivers+numBehindDrivers+2), 0);
-            numBehindDrivers += max(carsToDraw - (ciSelf.position + numBehindDrivers), 0);
+            numBehindDrivers += max(carsToDraw - (selfPosition + numBehindDrivers), 0);
 
-            if (ciSelf.position < numTopDrivers + numAheadDrivers) {
+            if (selfPosition < numTopDrivers + numAheadDrivers) {
                 carsToSkip = 0;
             }
-            else if (ciSelf.position > carsInClass - numBehindDrivers) {
+            else if (selfPosition > carsInClass - numBehindDrivers) {
                 carsToSkip = carsInClass - numTopDrivers - numBehindDrivers - numAheadDrivers - 1;
             }
             else carsToSkip = 0;
@@ -433,7 +432,7 @@ protected:
 
             y = 2*yoff + lineHeight/2 + (drawnCars+1)*lineHeight;
             
-            if (carInfo[i].classId != ownClass) {
+            if (carInfo[i].classId != selfClass) {
                 continue;
             }
 
@@ -656,7 +655,7 @@ protected:
                 str.clear();
                 if (ci.l5 > 0 && selfPosition > 0) {
                     str = formatLaptime(ci.l5);
-                    if (ci.l5 >= ciSelf.l5)
+                    if (ci.l5 >= selfLast5Laps)
                         m_brush->SetColor(deltaPosCol);
                     else
                         m_brush->SetColor(deltaNegCol);
