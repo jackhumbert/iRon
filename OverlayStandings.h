@@ -140,7 +140,7 @@ protected:
 
         struct CarInfo {
             int     carIdx = 0;
-            int     classIdx = 0;
+            int     classId = 0;
             int     lapCount = 0;
             float   pctAroundLap = 0;
             int     lapGap = 0;
@@ -166,6 +166,7 @@ protected:
         // Init array
         map<int, classBestLap> bestLapClass;
         int selfPosition = ir_getPosition(g_ir_session->driverCarIdx);
+        int ownClass = ir_PlayerCarClass.getInt();
         boolean hasPacecar = false;
 
         for( int i=0; i<IR_MAX_CARS; ++i )
@@ -186,7 +187,7 @@ protected:
             ci.last         = ir_CarIdxLastLapTime.getFloat(i);
             ci.pitAge       = ir_CarIdxLap.getInt(i) - car.lastLapInPits;
             ci.positionsChanged = ir_getPositionsChanged(i);
-            ci.classIdx     = ir_getClassId(ci.carIdx);
+            ci.classId     = ir_getClassId(ci.carIdx);
 
             ci.best         = ir_CarIdxBestLapTime.getFloat(i);
             if (g_ir_session->sessionType == SessionType::RACE && ir_SessionState.getInt() <= irsdk_StateWarmup || g_ir_session->sessionType == SessionType::QUALIFY && ci.best <= 0) {
@@ -215,14 +216,14 @@ protected:
                 }               
             }
 
-            if (!bestLapClass.contains(ci.classIdx)) {
+            if (!bestLapClass.contains(ci.classId)) {
                 classBestLap classBest;
-                bestLapClass.insert_or_assign(ci.classIdx, classBest);
+                bestLapClass.insert_or_assign(ci.classId, classBest);
             }
 
-            if( ci.best > 0 && ci.best < bestLapClass[ci.classIdx].best) {
-                bestLapClass[ci.classIdx].best = ci.best;
-                bestLapClass[ci.classIdx].carIdx = hasPacecar ? ci.carIdx - 1 : ci.carIdx;               
+            if( ci.best > 0 && ci.best < bestLapClass[ci.classId].best) {
+                bestLapClass[ci.classId].best = ci.best;
+                bestLapClass[ci.classId].carIdx = hasPacecar ? ci.carIdx - 1 : ci.carIdx;               
             }
             
             if(ci.lapCount > 0)
@@ -252,9 +253,8 @@ protected:
         const int playerCarIdx = ir_PlayerCarIdx.getInt();
         const int ciSelfIdx = playerCarIdx > 0 ? hasPacecar ? playerCarIdx - 1 : playerCarIdx : 0; // TODO: Sometimes this fails in Release mode?
         //if (!playerCarIdx) return; // Couldn't get player idx, probably JUST loaded into a session
-        const CarInfo ciSelf = carInfo[ciSelfIdx];
-        // Sometimes the offset is not necessary. In a free practice session it didn't need it, but in a qualifying it did
-        //const CarInfo ciSelf = carInfo[ir_session->driverCarIdx];
+        CarInfo ciSelf;
+        memcpy(&ciSelf, &carInfo[ciSelfIdx], sizeof(CarInfo));
         
         // Sort by position
         sort( carInfo.begin(), carInfo.end(),
@@ -271,7 +271,7 @@ protected:
         for( int i=0; i<(int)carInfo.size(); ++i )
         {
             CarInfo&       ci       = carInfo[i];
-            if (ci.classIdx != ciSelf.classIdx)
+            if (ci.classId != ownClass)
                 continue;
 
             carsInClass++;
@@ -424,7 +424,6 @@ protected:
         }
         //printf("Cars to draw : %d\n", carsToDraw);
         int drawnCars = 0;
-        int ownClass = ir_PlayerCarClass.getInt();
         int selfClassDrivers = 0;
         bool skippedCars = false;
         int numSkippedCars = 0;
@@ -434,7 +433,7 @@ protected:
 
             y = 2*yoff + lineHeight/2 + (drawnCars+1)*lineHeight;
             
-            if (carInfo[i].classIdx != ownClass) {
+            if (carInfo[i].classId != ownClass) {
                 continue;
             }
 
