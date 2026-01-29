@@ -248,14 +248,16 @@ class OverlayDDU : public Overlay
             const float4 pitCol             = g_cfg.getFloat4( m_name, "pit_col", float4(0, 0.8f, 0, 0.6f) );
 
             const int  carIdx   = g_ir_session->driverCarIdx;
+            const int selfClassId = ir_getClassId(carIdx);
             const bool imperial = ir_DisplayUnits.getInt() == 0;
 
             const DWORD tickCount = GetTickCount();
 
-            // Figure out who's P1
+            // Figure out who's P1 in own class
             int p1carIdx = -1;
             for( int i=0; i<IR_MAX_CARS; ++i )
             {
+                if (ir_getClassId(i) != selfClassId) continue;
                 if( ir_getPosition(i) == 1 ) {
                     p1carIdx = i;
                     break;
