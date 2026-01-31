@@ -45,6 +45,7 @@ class OverlayInputs : public Overlay
 
         virtual void onConfigChanged()
         {
+            m_absEnabled = g_cfg.getBool( m_name, "show_abs", true);
             // Width might have changed, reset tracker values
             m_throttleVtx.resize( m_width );
             m_brakeVtx.resize( m_width );
@@ -63,7 +64,6 @@ class OverlayInputs : public Overlay
 
         virtual void onUpdate()
         {
-            if ( doUpdate ) { }
             const float w = (float)m_width;
             const float h = (float)m_height;
 
@@ -88,13 +88,14 @@ class OverlayInputs : public Overlay
                 for( int i=0; i<(int)m_brakeVtx.size()-1; ++i )
                     m_brakeVtx[i].y = m_brakeVtx[i+1].y;
                 m_brakeVtx[(int)m_brakeVtx.size()-1].y = ir_Brake.getFloat();
-
-                for (int i = 0; i < (int)m_absVtx.size() - 1; ++i)
-                    m_absVtx[i].y = m_absVtx[i+1].y;
-                if (ir_BrakeABSactive.getBool()) {
-                    m_absVtx[(int)m_absVtx.size()-1].y = ir_Brake.getFloat(); //Overlap ABS with brake line
-                } else {
-                    m_absVtx[(int)m_absVtx.size()-1].y = -1.0f;
+                if ( m_absEnabled ) {
+                    for (int i = 0; i < (int)m_absVtx.size() - 1; ++i)
+                        m_absVtx[i].y = m_absVtx[i+1].y;
+                    if (ir_BrakeABSactive.getBool()) {
+                        m_absVtx[(int)m_absVtx.size()-1].y = ir_Brake.getFloat(); //Overlap ABS with brake line
+                    } else {
+                        m_absVtx[(int)m_absVtx.size()-1].y = -1.0f;
+                    }
                 }
 
                 for( int i=0; i<(int)m_clutchVtx.size()-1; ++i )
@@ -169,32 +170,33 @@ class OverlayInputs : public Overlay
             brakeLineSink->EndFigure( D2D1_FIGURE_END_OPEN );
             brakeLineSink->Close();
 
-            // ABS (line)
             Microsoft::WRL::ComPtr<ID2D1PathGeometry1> absLinePath;
-            Microsoft::WRL::ComPtr<ID2D1GeometrySink>  absLineSink;
-            m_d2dFactory->CreatePathGeometry(&absLinePath);
-            absLinePath->Open(&absLineSink);
-            
-            bool isABSActive = false;
-            for (int i = 0; i < (int)m_absVtx.size(); ++i) { 
-                // Draw ABS over brake line when active
-                if (m_absVtx[i].y >= 0) {
-                    if (!isABSActive) {
-                        absLineSink->BeginFigure(vtx2coord(m_absVtx[i]), D2D1_FIGURE_BEGIN_HOLLOW);
-                        isABSActive = true;
+            if ( m_absEnabled ) {
+                // ABS (line)
+                Microsoft::WRL::ComPtr<ID2D1GeometrySink>  absLineSink;
+                m_d2dFactory->CreatePathGeometry(&absLinePath);
+                absLinePath->Open(&absLineSink);
+                
+                bool isABSActive = false;
+                for (int i = 0; i < (int)m_absVtx.size(); ++i) { 
+                    // Draw ABS over brake line when active
+                    if (m_absVtx[i].y >= 0) {
+                        if (!isABSActive) {
+                            absLineSink->BeginFigure(vtx2coord(m_absVtx[i]), D2D1_FIGURE_BEGIN_HOLLOW);
+                            isABSActive = true;
+                        } else {
+                            absLineSink->AddLine(vtx2coord(m_absVtx[i]));
+                        }
                     } else {
-                        absLineSink->AddLine(vtx2coord(m_absVtx[i]));
-                    }
-                } else {
-                    if (isABSActive) {
-                        absLineSink->EndFigure(D2D1_FIGURE_END_OPEN);
-                        isABSActive = false;
+                        if (isABSActive) {
+                            absLineSink->EndFigure(D2D1_FIGURE_END_OPEN);
+                            isABSActive = false;
+                        }
                     }
                 }
+                if (isABSActive) absLineSink->EndFigure(D2D1_FIGURE_END_OPEN);
+                absLineSink->Close();
             }
-            if (isABSActive) absLineSink->EndFigure(D2D1_FIGURE_END_OPEN);
-            absLineSink->Close();
-
             // Clutch (line)
             Microsoft::WRL::ComPtr<ID2D1PathGeometry1> clutchLinePath;
             Microsoft::WRL::ComPtr<ID2D1GeometrySink>  clutchLineSink;
@@ -228,8 +230,9 @@ class OverlayInputs : public Overlay
             m_renderTarget->DrawGeometry( throttleLinePath.Get(), m_brush.Get(), thickness );
             m_brush->SetColor( g_cfg.getFloat4( m_name, "brake_col", float4(0.93f,0.03f,0.13f,0.8f) ) );
             m_renderTarget->DrawGeometry( brakeLinePath.Get(), m_brush.Get(), thickness );
-            m_brush->SetColor(g_cfg.getFloat4(m_name, "abs_col", float4(0.91f, 0.93f, 0.03f, 0.8f)));
-            m_renderTarget->DrawGeometry( absLinePath.Get(), m_brush.Get(), thickness );
+            if ( m_absEnabled ) {
+                m_brush->SetColor(g_cfg.getFloat4(m_name, "abs_col", float4(0.91f, 0.93f, 0.03f, 0.8f)));
+                m_renderTarget->DrawGeometry( absLinePath.Get(), m_brush.Get(            }                
             m_brush->SetColor( g_cfg.getFloat4( m_name, "clutch_col", float4(0.0f,0.03f,0.93f,0.8f) ) );
             m_renderTarget->DrawGeometry( clutchLinePath.Get(), m_brush.Get(), thickness );
             m_brush->SetColor( g_cfg.getFloat4( m_name, "steering_col", float4(1,1,1,0.3f) ) );
@@ -250,5 +253,5 @@ class OverlayInputs : public Overlay
         std::vector<float2> m_clutchVtx;
         std::vector<float2> m_steerVtx;
         std::vector<float2> m_absVtx;
-        bool doUpdate = true;
+        bool m_absEnabled;
 };
