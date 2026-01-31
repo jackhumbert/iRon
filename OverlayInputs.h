@@ -44,8 +44,7 @@ class OverlayInputs : public Overlay
         }
 
         virtual void onConfigChanged()
-        {
-            m_absEnabled = g_cfg.getBool( m_name, "show_abs", true);
+        {            m_absEnabled = g_cfg.getBool( m_name, "show_abs", true);
             // Width might have changed, reset tracker values
             m_throttleVtx.resize( m_width );
             m_brakeVtx.resize( m_width );
@@ -232,7 +231,8 @@ class OverlayInputs : public Overlay
             m_renderTarget->DrawGeometry( brakeLinePath.Get(), m_brush.Get(), thickness );
             if ( m_absEnabled ) {
                 m_brush->SetColor(g_cfg.getFloat4(m_name, "abs_col", float4(0.91f, 0.93f, 0.03f, 0.8f)));
-                m_renderTarget->DrawGeometry( absLinePath.Get(), m_brush.Get(            }                
+                m_renderTarget->DrawGeometry( absLinePath.Get(), m_brush.Get(), thickness );
+            }                
             m_brush->SetColor( g_cfg.getFloat4( m_name, "clutch_col", float4(0.0f,0.03f,0.93f,0.8f) ) );
             m_renderTarget->DrawGeometry( clutchLinePath.Get(), m_brush.Get(), thickness );
             m_brush->SetColor( g_cfg.getFloat4( m_name, "steering_col", float4(1,1,1,0.3f) ) );
