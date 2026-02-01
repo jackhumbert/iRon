@@ -230,6 +230,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="OverlayDebug.cpp" />
+    <ClCompile Include="OverlayTurnNumber.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />

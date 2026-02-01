@@ -397,6 +397,8 @@ void updateSessionStringData(const char* sessionYaml, Session* ir_session_pointe
     // Weekend info
     parseYamlInt(sessionYaml, "WeekendInfo:SubSessionID:", &ir_session_pointer->subsessionId);
 
+    parseYamlStr(sessionYaml, "WeekendInfo:TrackName:", ir_session_pointer->trackName);
+
     parseYamlInt(sessionYaml, "WeekendInfo:WeekendOptions:IsFixedSetup:", &ir_session_pointer->isFixedSetup);
 
     parseYamlInt(sessionYaml, "WeekendInfo:WeekendOptions:NumCarClasses:", &ir_session_pointer->numCarClasses);

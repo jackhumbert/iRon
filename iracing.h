@@ -109,6 +109,8 @@ struct Session
     float           rpmSLShift = 0;
     float           rpmSLLast = 0;
     float           rpmSLBlink = 0;
+		std::string			trackName;
+
 };
 
 extern irsdkCVar ir_SessionTime;    // double[1] Seconds since session start (s)

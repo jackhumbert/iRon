@@ -15,6 +15,8 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="OverlayDebug.cpp" />
+    <ClCompile Include="irsdk\irsdk_diskclient.cpp" />
+    <ClCompile Include="OverlayTurnNumber.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="irsdk">
@@ -43,6 +45,7 @@
     <ClInclude Include="OverlayDDU.h" />
     <ClInclude Include="OverlayCover.h" />
     <ClInclude Include="OverlayRadar.h" />
+    <ClInclude Include="irsdk\irsdk_diskclient.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENSE" />
