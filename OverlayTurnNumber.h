@@ -101,23 +101,18 @@ protected:
   //  bmpTarget->GetBitmap(&m_backgroundBitmap);
 	}
 
-  fs::path get_turn_numbers_path() {
-		char buffer[MAX_PATH];
-		auto bytes = GetModuleFileNameA(NULL, buffer, MAX_PATH);
-
-		if (bytes == 0)
-			return L"";
-
-		fs::path fullPath(buffer);
-
-		return fullPath.parent_path() / "TurnNumbers";
-  }
-
-  void load_turn_numbers() { 
-		auto filename = get_turn_numbers_path() / std::format("{}.json", g_ir_session->trackName);
-
-
+  void load_turn_numbers() {
     m_trackNumbersLoaded = true;
+		
+    const wchar_t *directory = L"./iracing-turn-numbers";
+
+    if (!filesystem::exists(directory) || !filesystem::is_directory(directory)) {
+			printf("Couldn't find iracing-turn-numbers folder\n");
+			return;
+    }
+
+		auto filename = filesystem::path(directory) / std::format("{}.json", g_ir_session->trackName);
+
 
 		std::string json;
     if (!loadFile(filename.string(), json)) {
@@ -165,7 +160,8 @@ protected:
 		//	m_renderTarget->Clear(float4(0, 0, 0, 0));
 		//	m_renderTarget->DrawBitmap(m_backgroundBitmap.Get());
 		//}
-    auto dist = ir_LapDistPct.getFloat();
+    auto dist = ir_LapDist.getFloat();
+    //auto dist = ir_LapDistPct.getFloat();
 		//wchar_t s[16];
   //  swprintf(s, _countof(s), L"%3f", dist);
   //  m_text.render(m_renderTarget.Get(), s,
