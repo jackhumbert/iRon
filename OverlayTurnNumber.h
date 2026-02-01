@@ -116,11 +116,15 @@ protected:
   void load_turn_numbers() { 
 		auto filename = get_turn_numbers_path() / std::format("{}.json", g_ir_session->trackName);
 
-		printf("Looking for turn numbers in %s\n", filename.string().c_str());
+
+    m_trackNumbersLoaded = true;
 
 		std::string json;
-		if (!loadFile(filename.string(), json))
+    if (!loadFile(filename.string(), json)) {
+      printf("Couldn't find %s\n", filename.string().c_str());
 			return;
+		}
+		printf("Found %s\n", filename.string().c_str());
 
     picojson::value pjval;
     std::string parseError = picojson::parse(pjval, json);
@@ -142,7 +146,6 @@ protected:
 			});
 		}
 
-    m_trackNumbersLoaded = true;
 	}
 
   virtual void onUpdate() {
