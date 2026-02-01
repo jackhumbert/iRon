@@ -46,7 +46,6 @@ jobs:
     - name: Create archive
       run: |
         cp x64\Release\iron.exe iron.exe
-        del iron.zip
         zip -r iron.zip iron.exe carIcons iracing-turn-numbers -x ".git/*" ".github/*"
 
     - name: Upload a Build Artifact
