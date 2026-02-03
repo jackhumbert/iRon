@@ -1,0 +1,56 @@
+[
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\Config.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\Config.cpp",
+  "file": "D:/Code/iRon/Config.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/Config.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\iracing.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\iracing.cpp",
+  "file": "D:/Code/iRon/iracing.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/iracing.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\irsdk\\irsdk_diskclient.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\irsdk\\irsdk_diskclient.cpp",
+  "file": "D:/Code/iRon/irsdk/irsdk_diskclient.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/irsdk/irsdk_diskclient.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\main.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\main.cpp",
+  "file": "D:/Code/iRon/main.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/main.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\Overlay.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\Overlay.cpp",
+  "file": "D:/Code/iRon/Overlay.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/Overlay.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\OverlayDebug.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\OverlayDebug.cpp",
+  "file": "D:/Code/iRon/OverlayDebug.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/OverlayDebug.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\irsdk\\irsdk_client.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\irsdk\\irsdk_client.cpp",
+  "file": "D:/Code/iRon/irsdk/irsdk_client.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/irsdk/irsdk_client.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\irsdk\\irsdk_utils.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\irsdk\\irsdk_utils.cpp",
+  "file": "D:/Code/iRon/irsdk/irsdk_utils.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/irsdk/irsdk_utils.cpp.obj"
+},
+{
+  "directory": "D:/Code/iRon/build",
+  "command": "C:\\PROGRA~1\\MIB055~1\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1444~1.352\\bin\\Hostx86\\x64\\cl.exe  /nologo /TP -DNOMINMAX -DPICOJSON_USE_RVALUE_REFERENCE=0 -D_CONSOLE -D_CRT_SECURE_NO_WARNINGS -D_DEBUG -D_MBCS -std:c++20 -MTd /permissive- /sdl /W3 /Zi /EHsc /FoCMakeFiles\\iron.dir\\irsdk\\yaml_parser.cpp.obj /FdCMakeFiles\\iron.dir\\ /FS -c D:\\Code\\iRon\\irsdk\\yaml_parser.cpp",
+  "file": "D:/Code/iRon/irsdk/yaml_parser.cpp",
+  "output": "D:/Code/iRon/build/CMakeFiles/iron.dir/irsdk/yaml_parser.cpp.obj"
+}
+]
